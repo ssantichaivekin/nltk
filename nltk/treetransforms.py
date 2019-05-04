@@ -140,14 +140,33 @@ def chomsky_normal_form(
                 parentString = "%s<%s>" % (parentChar, "-".join(parent))
                 node.set_label(node.label() + parentString)
                 parent = [originalNode] + parent[: vertMarkov - 1]
+            
+            # Remove unit rules
+            # A -> B, B -> C, C -> DE => A -> DE
+            while len(node) == 1 and isinstance(node[0], Tree):
+                # the children of the node beoome the children of the child of
+                # the node
+                node[0:] = node[0][0:]
+
+            # Replace terminals in long rules
+            # A -> bC => A -> BC, B -> b
+            if len(node) >= 2:
+                for childIndex in range(len(node)):
+                    if not isinstance(node[childIndex], Tree):
+                        # change the terminal to a terminal rule
+                        terminal = node[childIndex]
+                        newNode = Tree("T(%s)" % terminal, [terminal])
+                        node[childIndex] = newNode
 
             # add children to the agenda before we mess with them
             for child in node:
                 nodeList.append((child, parent))
 
-            # chomsky normal form factorization
+            # chomsky normal form factorization (remove long rules)
             if len(node) > 2:
-                childNodes = [child.label() for child in node]
+                childNodes = []
+                for child in node:
+                    childNodes.append(child.label())
                 nodeCopy = node.copy()
                 node[0:] = []  # delete the children
 
